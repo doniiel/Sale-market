@@ -74,8 +74,36 @@ public class OrderServiceImpl implements OrderService {
     public OrderDto updateOrder(Long id, OrderRequest request) {
         validateOrderMatch(request.getProductIds(), request.getQuantities());
 
-        var order =
+        var order = orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Order not found with id: " + id));
+        order.setStatus(NEW);
 
+        var products = productRepository.findAllByIdIn(request.getProductIds());
+        var updatedItems = new ArrayList<OrderItem>();
+        var totalAmount = BigDecimal.ZERO;
+
+        for (int i = 0; i < products.size(); i++) {
+            var product = products.get(i);
+            int quantity = request.getQuantities().get(i);
+
+            var orderItem = new OrderItem();
+            orderItem.setOrder(order);
+            orderItem.setProduct(product);
+            orderItem.setQuantity(quantity);
+            orderItem.setUnitPrice(product.getPrice());
+            orderItem.setTotalPrice(product.getPrice().multiply(BigDecimal.valueOf(quantity)));
+
+            totalAmount = totalAmount.add(orderItem.getTotalPrice());
+            updatedItems.add(orderItem);
+        }
+
+        orderItemRepository.deleteAll(order.getOrderItems());
+        order.setOrderItems(updatedItems);
+
+        orderRepository.save(order);
+        log.info("Order updated: {}", order);
+
+        return orderMappper.toDto(order);
     }
 
     @Override

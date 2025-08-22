@@ -13,8 +13,6 @@ import java.util.Set;
 @ToString
 public class OrderRequest {
 
-    private OrderStatus status;
-
     private List<Long> productIds;
 
     private List<Integer> quantities;
