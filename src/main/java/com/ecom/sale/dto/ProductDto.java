@@ -7,7 +7,11 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class CategorySearchRequest {
+public class ProductDto {
 
-    private
+    private Long id;
+
+    private String name;
+
+
 }

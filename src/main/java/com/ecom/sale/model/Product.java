@@ -41,6 +41,6 @@ public class Product extends AbstractAuditingEntity {
     private BigDecimal price;
 
     @Column(name = "quantity", nullable = false)
-    private int quantity = 0;
+    private Integer quantity = 0;
 
 }
