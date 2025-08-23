@@ -13,13 +13,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
+import org.webjars.NotFoundException;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
+
     private final CategoryRepository categoryRepository;
     private final CategoryMapper mapper;
     private final UpdateUtils updateUtils;
@@ -27,11 +27,12 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public CategoryDto createCategory(CategoryRequest request) {
-        var category = new Category();
-        validateName(request.getName());
+        ensureCategoryNameIsUnique(request.getName());
 
-        category.setName(Optional.ofNullable(request.getName()).orElse(""));
-        category.setDescription(Optional.ofNullable(request.getDescription()).orElse(""));
+        var category = new Category();
+        category.setName(request.getName());
+        category.setDescription(request.getDescription());
+
         categoryRepository.save(category);
         log.info("Category created: {}", category);
 
@@ -43,40 +44,44 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryDto updateCategory(Long id, CategoryRequest request) {
         var category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
-        validateName(request.getName());
 
-        updateUtils.updateIfChanged(category::getDescription, category::setDescription, request.getDescription());
+        if (!category.getName().equals(request.getName())) {
+            ensureCategoryNameIsUnique(request.getName());
+        }
+
         updateUtils.updateIfChanged(category::getName, category::setName, request.getName());
-        categoryRepository.save(category);
+        updateUtils.updateIfChanged(category::getDescription, category::setDescription, request.getDescription());
 
-        log.info("Category updated with id: " + id);
+        categoryRepository.save(category);
+        log.info("Category updated with id: {} ", id);
+
         return mapper.toDto(category);
     }
 
     @Override
     @Transactional
-    public void deleteCategory(Long id) {;
+    public void deleteCategory(Long id) {
         if (!categoryRepository.existsById(id)) {
-            throw new RuntimeException("Category not found with id: " + id);
+            throw new NotFoundException("Category not found with id=" + id);
         }
         categoryRepository.deleteById(id);
-        log.info("Category with id: {} deleted from database", id);
+        log.info("Deleted category with id={}", id);
     }
 
     @Override
     @Transactional(readOnly = true)
     public CategoryDto getCategory(Long id) {
-        var category = categoryRepository.findById(id)
+        return categoryRepository.findById(id)
+                .map(mapper::toDto)
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
-        return mapper.toDto(category);
     }
 
     @Override
     @Transactional(readOnly = true)
     public CategoryDto getCategoryByName(String categoryName) {
-        var category = categoryRepository.findByName(categoryName)
+        return categoryRepository.findByName(categoryName)
+                .map(mapper::toDto)
                 .orElseThrow(() -> new RuntimeException("Category not found with name: " + categoryName));
-        return mapper.toDto(category);
     }
 
     @Override
@@ -86,9 +91,9 @@ public class CategoryServiceImpl implements CategoryService {
                 .map(mapper::toDto);
     }
 
-    private void validateName(String name) {
+    private void ensureCategoryNameIsUnique(String name) {
         if (categoryRepository.existsByName(name)) {
-            throw new RuntimeException("Category with name " + name + " already exists");
+            throw new IllegalArgumentException("Category with name=" + name + " already exists");
         }
     }
 }
