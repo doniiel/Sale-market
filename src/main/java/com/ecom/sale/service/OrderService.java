@@ -17,4 +17,6 @@ public interface OrderService {
 
     Page<OrderDto> getOrders(Pageable pageable);
 
+    void cancelOrder(Long orderId);
+
 }
