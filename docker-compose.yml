@@ -14,6 +14,22 @@ services:
     networks:
       - sale-network
 
+  sale-app:
+    build: .
+    container_name: sale_app
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/sale_market
+      SPRING_DATASOURCE_USERNAME: sale_user
+      SPRING_DATASOURCE_PASSWORD: sale_password
+    depends_on:
+      - postgres
+    networks:
+      - sale-network
+
+
 volumes:
   postgres_data:
 
