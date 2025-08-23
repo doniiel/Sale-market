@@ -38,7 +38,7 @@ public class CategoryServiceImpl implements CategoryService {
         category.setDescription(request.getDescription());
 
         categoryRepository.save(category);
-        log.info("Category created: {}", category);
+        log.info("Category created successfully: id={}, name='{}'", category.getId(), category.getName());
 
         return mapper.toDto(category);
     }
@@ -61,7 +61,7 @@ public class CategoryServiceImpl implements CategoryService {
         updateUtils.updateIfChanged(category::getDescription, category::setDescription, request.getDescription());
 
         categoryRepository.save(category);
-        log.info("Category updated with id: {} ", id);
+        log.info("Category updated successfully: id={}, name='{}'", id, category.getName());
 
         return mapper.toDto(category);
     }
@@ -77,37 +77,42 @@ public class CategoryServiceImpl implements CategoryService {
             );
         }
         categoryRepository.deleteById(id);
-        log.info("Deleted category with id={}", id);
+        log.info("Category deleted successfully: id={}", id);
     }
 
     @Override
     @Transactional(readOnly = true)
     public CategoryDto getCategory(Long id) {
-        return categoryRepository.findById(id)
-                .map(mapper::toDto)
+        var category = categoryRepository.findById(id)
                 .orElseThrow(() -> new CustomException(
                         "/category", HttpStatus.NOT_FOUND,
                         "Category not found with id: " + id,
                         LocalDateTime.now()
                 ));
+        log.info("Fetched category: id={}, name='{}'", category.getId(), category.getName());
+        return mapper.toDto(category);
     }
 
     @Override
     @Transactional(readOnly = true)
     public CategoryDto getCategoryByName(String categoryName) {
-        return categoryRepository.findByName(categoryName)
-                .map(mapper::toDto)
+        var category = categoryRepository.findByName(categoryName)
                 .orElseThrow(() -> new CustomException(
                         "/category", HttpStatus.NOT_FOUND,
                         "Category not found with name: " + categoryName,
                         LocalDateTime.now()
                 ));
+        log.info("Fetched category by name: id={}, name='{}'", category.getId(), category.getName());
+        return mapper.toDto(category);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<CategoryDto> getAllCategory(Pageable pageable) {
-        return categoryRepository.findAll(pageable)
+        var categories = categoryRepository.findAll(pageable)
                 .map(mapper::toDto);
+        log.info("Fetched {} categories", categories.getTotalElements());
+        return categories;
     }
 }
+

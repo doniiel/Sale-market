@@ -24,10 +24,10 @@ public class ProductSearchCriteria {
     @Size(max = 100, message = "Category name must not exceed 100 characters")
     private Category category;
 
-    @DecimalMin(value = "0.0", inclusive = true, message = "PriceFrom must be positive or zero")
+    @DecimalMin(value = "0.0", message = "PriceFrom must be positive or zero")
     private BigDecimal priceFrom;
 
-    @DecimalMin(value = "0.0", inclusive = true, message = "PriceTo must be positive or zero")
+    @DecimalMin(value = "0.0", message = "PriceTo must be positive or zero")
     private BigDecimal priceTo;
 
     @Min(value = 0, message = "QuantityFrom must be positive or zero")

@@ -50,8 +50,8 @@ public class OrderServiceImpl implements OrderService {
         order.setTotalAmount(calculateTotalAmount(items));
 
         orderRepository.save(order);
+        log.info("Created new order: id={}, totalAmount={}", order.getId(), order.getTotalAmount());
 
-        log.info("Created new order with id: {}", order.getId());
         return orderMapper.toDto(order);
     }
 
@@ -76,8 +76,8 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(NEW);
 
         orderRepository.save(order);
+        log.info("Updated order: id={}, totalAmount={}", order.getId(), order.getTotalAmount());
 
-        log.info("Updated order with id: {}", order.getId());
         return orderMapper.toDto(order);
     }
 
@@ -93,31 +93,34 @@ public class OrderServiceImpl implements OrderService {
 
         if (order.getStatus() == NEW) {
             restoreProductQuantities(order.getOrderItems());
+            log.info("Restored product quantities for deleted order id={}", orderId);
         }
 
         orderItemRepository.deleteAll(order.getOrderItems());
         orderRepository.delete(order);
-
-        log.info("Deleted order with id: {}", orderId);
+        log.info("Deleted order: id={}", orderId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public OrderDto getOrder(Long id) {
-        return orderRepository.findById(id)
-                .map(orderMapper::toDto)
+        var order = orderRepository.findById(id)
                 .orElseThrow(() -> new CustomException(
                         "/orders", HttpStatus.NOT_FOUND,
                         "Order not found with id: " + id,
                         LocalDateTime.now()
                 ));
+        log.info("Fetched order: id={}, totalAmount={}", order.getId(), order.getTotalAmount());
+        return orderMapper.toDto(order);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<OrderDto> getOrders(Pageable pageable) {
-        return orderRepository.findAll(pageable)
+        var orders = orderRepository.findAll(pageable)
                 .map(orderMapper::toDto);
+        log.info("Fetched {} orders", orders.getTotalElements());
+        return orders;
     }
 
     @Override
@@ -131,12 +134,11 @@ public class OrderServiceImpl implements OrderService {
                 ));
 
         restoreProductQuantities(order.getOrderItems());
-
         order.setStatus(CANCELLED);
         order.setCancelledAt(LocalDateTime.now());
         orderRepository.save(order);
 
-        log.info("Order cancelled: {}", order);
+        log.info("Cancelled order: id={}, totalAmount={}", order.getId(), order.getTotalAmount());
     }
 
     private void validateRequest(OrderRequest request) {
@@ -171,6 +173,8 @@ public class OrderServiceImpl implements OrderService {
             items.add(buildOrderItem(order, product, quantity));
             product.setQuantity(product.getQuantity() - quantity);
             productRepository.save(product);
+
+            log.info("Reserved product '{}' with quantity {} for order", product.getName(), quantity);
         }
 
         return items;
@@ -197,6 +201,7 @@ public class OrderServiceImpl implements OrderService {
             var product = item.getProduct();
             product.setQuantity(product.getQuantity() + item.getQuantity());
             productRepository.save(product);
+            log.info("Restored {} units to product '{}'", item.getQuantity(), product.getName());
         }
     }
 

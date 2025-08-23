@@ -46,7 +46,7 @@ public class PaymentServiceImpl implements PaymentService {
                 ));
 
         if (order.getPayment() != null) {
-            log.warn("Payment already exists for orderId={}", orderId);
+            log.info("Payment already exists for orderId={}", orderId);
             return mapper.toDto(order.getPayment());
         }
 
@@ -59,7 +59,8 @@ public class PaymentServiceImpl implements PaymentService {
 
         paymentRepository.save(payment);
 
-        log.info("Created payment for orderId={}", orderId);
+        log.info("Created payment: paymentId={}, orderId={}, amount={}, method={}",
+                payment.getId(), orderId, payment.getAmount(), payment.getPaymentMethod());
         return mapper.toDto(payment);
     }
 
@@ -80,7 +81,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         paymentRepository.deleteById(paymentId);
 
-        log.info("Deleted payment with id={} and reset orderId={}", paymentId, order.getId());
+        log.info("Deleted payment: paymentId={}, reset orderId={}", paymentId, order.getId());
     }
 
     @Override
@@ -109,31 +110,33 @@ public class PaymentServiceImpl implements PaymentService {
         orderRepository.save(order);
         paymentRepository.save(payment);
 
-        log.info("Approved payment for orderId={}", orderId);
+        log.info("Payment approved: paymentId={}, orderId={}, amount={}", payment.getId(), orderId, payment.getAmount());
         return mapper.toDto(payment);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PaymentDto getPaymentById(Long id) {
-        return paymentRepository.findById(id)
-                .map(mapper::toDto)
+        var payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new CustomException(
                         "/payments", HttpStatus.NOT_FOUND,
                         "Payment not found with id: " + id,
                         LocalDateTime.now()
                 ));
+        log.info("Fetched payment by id: paymentId={}, orderId={}, amount={}", payment.getId(), payment.getOrder().getId(), payment.getAmount());
+        return mapper.toDto(payment);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PaymentDto getPaymentByOrder(Long orderId) {
-        return paymentRepository.findByOrder_Id(orderId)
-                .map(mapper::toDto)
+        var payment = paymentRepository.findByOrder_Id(orderId)
                 .orElseThrow(() -> new CustomException(
                         "/payments", HttpStatus.NOT_FOUND,
                         "Payment not found with order id: " + orderId,
                         LocalDateTime.now()
                 ));
+        log.info("Fetched payment by orderId: paymentId={}, orderId={}, amount={}", payment.getId(), orderId, payment.getAmount());
+        return mapper.toDto(payment);
     }
 }

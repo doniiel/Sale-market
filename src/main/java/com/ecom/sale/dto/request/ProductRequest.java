@@ -27,7 +27,7 @@ public class ProductRequest {
 
     @Schema(description = "Price of the product", example = "149.99")
     @NotNull(message = "Price is required")
-    @DecimalMin(value = "0.01", inclusive = true, message = "Price must be greater than 0")
+    @DecimalMin(value = "0.01", message = "Price must be greater than 0")
     private BigDecimal price;
 
     @Schema(description = "Available stock quantity", example = "50")

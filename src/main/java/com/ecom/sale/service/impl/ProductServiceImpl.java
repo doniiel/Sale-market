@@ -51,7 +51,8 @@ public class ProductServiceImpl implements ProductService {
         product.setQuantity(request.getQuantity());
 
         productRepository.save(product);
-        log.info("Created product : {}", product);
+        log.info("Created product: id={}, name='{}', category='{}', price={}, quantity={}",
+                product.getId(), product.getName(), category.getName(), product.getPrice(), product.getQuantity());
 
         return mapper.toDto(product);
     }
@@ -78,7 +79,8 @@ public class ProductServiceImpl implements ProductService {
         updateUtils.updateIfChanged(product::getQuantity, product::setQuantity, request.getQuantity());
 
         productRepository.save(product);
-        log.info("Updated product : {}", product);
+        log.info("Updated product: id={}, name='{}', category='{}', price={}, quantity={}",
+                product.getId(), product.getName(), category.getName(), product.getPrice(), product.getQuantity());
 
         return mapper.toDto(product);
     }
@@ -97,10 +99,11 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public ProductDto getProduct(Long id) {
-        return productRepository.findById(id)
-                .map(mapper::toDto)
+        var product = productRepository.findById(id)
                 .orElseThrow(() -> new CustomException("/product", NOT_FOUND,
                         "Product not found with id: " + id, LocalDateTime.now()));
+        log.info("Fetched product: id={}, name='{}'", product.getId(), product.getName());
+        return mapper.toDto(product);
     }
 
     @Override
@@ -116,8 +119,10 @@ public class ProductServiceImpl implements ProductService {
                 .withQuantityTo(criteria.getQuantityTo())
                 .build();
 
-        return productRepository.findAll(spec, pageable)
+        var products = productRepository.findAll(spec, pageable)
                 .map(mapper::toDto);
+        log.info("Fetched {} products with search criteria", products.getTotalElements());
+        return products;
     }
 }
 
