@@ -3,6 +3,7 @@ package com.ecom.sale.service.impl;
 import com.ecom.sale.dto.ProductDto;
 import com.ecom.sale.dto.ProductSearchCriteria;
 import com.ecom.sale.dto.request.ProductRequest;
+import com.ecom.sale.exception.CustomException;
 import com.ecom.sale.mapper.ProductMapper;
 import com.ecom.sale.model.Product;
 import com.ecom.sale.repository.CategoryRepository;
@@ -10,6 +11,7 @@ import com.ecom.sale.repository.ProductRepository;
 import com.ecom.sale.repository.specification.builder.ProductSpecificationBuilder;
 import com.ecom.sale.service.ProductService;
 import com.ecom.sale.util.UpdateUtils;
+import com.ecom.sale.util.ValidatorUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -17,7 +19,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Slf4j
 @Service
@@ -33,9 +37,12 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public ProductDto createProduct(ProductRequest request) {
         var category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Category not found with id: " + request.getCategoryId()));
-        validatePrice(request.getPrice());
-        validateQuantity(request.getQuantity());
+                .orElseThrow(() -> new CustomException("/category", NOT_FOUND,
+                        "Category not found with id: " + request.getCategoryId(), LocalDateTime.now())
+                );
+
+        ValidatorUtils.validatePrice(request.getPrice());
+        ValidatorUtils.validateQuantity(request.getQuantity());
 
         var product = new Product();
         product.setCategory(category);
@@ -47,18 +54,20 @@ public class ProductServiceImpl implements ProductService {
         log.info("Created product : {}", product);
 
         return mapper.toDto(product);
-
     }
 
     @Override
     @Transactional
     public ProductDto updateProduct(Long id, ProductRequest request) {
         var product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+                .orElseThrow(() -> new CustomException("/product", NOT_FOUND,
+                        "Product not found with id: " + id, LocalDateTime.now()));
         var category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Category not found with id: " + request.getCategoryId()));
-        validatePrice(request.getPrice());
-        validateQuantity(request.getQuantity());
+                .orElseThrow(() -> new CustomException("/category", NOT_FOUND,
+                        "Category not found with id: " + request.getCategoryId(), LocalDateTime.now()));
+
+        ValidatorUtils.validatePrice(request.getPrice());
+        ValidatorUtils.validateQuantity(request.getQuantity());
 
         if (!product.getCategory().getId().equals(category.getId())) {
             product.setCategory(category);
@@ -78,10 +87,11 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void deleteProduct(Long id) {
         if (!productRepository.existsById(id)) {
-            throw new RuntimeException("Product not found with id: " + id);
+            throw new CustomException("/product", NOT_FOUND,
+                    "Product not found with id: " + id, LocalDateTime.now());
         }
         productRepository.deleteById(id);
-        log.info("Product with id: {} deleted from database", id);
+        log.info("Deleted product with id={}", id);
     }
 
     @Override
@@ -89,7 +99,8 @@ public class ProductServiceImpl implements ProductService {
     public ProductDto getProduct(Long id) {
         return productRepository.findById(id)
                 .map(mapper::toDto)
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+                .orElseThrow(() -> new CustomException("/product", NOT_FOUND,
+                        "Product not found with id: " + id, LocalDateTime.now()));
     }
 
     @Override
@@ -107,16 +118,5 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.findAll(spec, pageable)
                 .map(mapper::toDto);
     }
-
-    private void validateQuantity(Integer quantity) {
-        if (quantity == null || quantity < 0) {
-            throw new RuntimeException("Quantity cannot be negative");
-        }
-    }
-
-    private void validatePrice(BigDecimal price) {
-        if (price == null || price.compareTo(BigDecimal.ZERO) < 0) {
-            throw new RuntimeException("Price cannot be negative");
-        }
-    }
 }
+

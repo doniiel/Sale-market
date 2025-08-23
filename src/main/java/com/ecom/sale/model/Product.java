@@ -4,14 +4,12 @@ import com.ecom.sale.model.audit.AbstractAuditingEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 import java.math.BigDecimal;
 
 @Getter
 @Setter
 @Entity
-@ToString
 @Table(name = "product")
 public class Product extends AbstractAuditingEntity {
 
@@ -28,7 +26,7 @@ public class Product extends AbstractAuditingEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
+    @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
     @Column(name = "name", nullable = false)

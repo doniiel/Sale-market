@@ -1,0 +1,36 @@
+package com.ecom.sale.exception;
+
+
+import com.ecom.sale.dto.ErrorDto;
+import com.ecom.sale.util.ErrorUtil;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+
+import java.time.LocalDateTime;
+
+@RestControllerAdvice
+public class GlobalHandlerException {
+
+    @ExceptionHandler(CustomException.class)
+    public ResponseEntity<ErrorDto> handleApiException(CustomException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ErrorUtil.buildError(ex));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorDto> handleOtherExceptions(WebRequest request,Exception ex) {
+        var apiEx = new CustomException(
+                request.getContextPath(),
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                ex.getMessage(),
+                LocalDateTime.now()
+        );
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ErrorUtil.buildError(apiEx));
+    }
+}

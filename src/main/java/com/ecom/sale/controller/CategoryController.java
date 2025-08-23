@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Tag(name = "Category API", description = "Operations for managing categories")
 public class CategoryController {
+
     private final CategoryService categoryService;
 
     @Operation(summary = "Create new category", description = "Creates a new category with the given request body")

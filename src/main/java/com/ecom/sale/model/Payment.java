@@ -28,14 +28,13 @@ public class Payment {
     )
     private Long id;
 
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "order_id")
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false, unique = true)
     private Order order;
 
     @Column(name = "payment_method", nullable = false)
     @Enumerated(EnumType.STRING)
     private PaymentMethod paymentMethod;
-
 
     @Column(name = "payment_status", nullable = false)
     @Enumerated(EnumType.STRING)
@@ -44,7 +43,7 @@ public class Payment {
     @Column(name = "amount", nullable = false)
     private BigDecimal amount;
 
-    @Column(name = "transaction_id", nullable = false)
+    @Column(name = "transaction_id", nullable = false, unique = true)
     private String transactionId;
 
 }

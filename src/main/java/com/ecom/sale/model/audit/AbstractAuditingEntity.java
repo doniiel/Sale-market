@@ -5,6 +5,8 @@ import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
@@ -15,23 +17,12 @@ import java.time.Instant;
 @EntityListeners(AuditingEntityListener.class)
 public class AbstractAuditingEntity {
 
-    @Column(name = "created_by", nullable = false)
-    private String createdBy;
-
+    @CreatedDate
     @Column(name = "created_date", nullable = false)
     private Instant createdDate;
 
-    @Column(name = "updated_by", nullable = false)
-    private String updatedBy;
-
+    @LastModifiedDate
     @Column(name = "updated_date", nullable = false)
     private Instant updatedDate;
 
-
-    public AbstractAuditingEntity() {
-        this.createdBy = "system";
-        this.updatedBy = "system";
-        this.createdDate = Instant.now();
-        this.updatedDate = Instant.now();
-    }
 }

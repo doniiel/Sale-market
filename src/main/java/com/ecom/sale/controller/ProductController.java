@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Tag(name = "Product API", description = "Operations for managing products")
 public class ProductController {
+
     private final ProductService productService;
 
     @Operation(summary = "Create new product", description = "Creates a new product with the provided request data")
