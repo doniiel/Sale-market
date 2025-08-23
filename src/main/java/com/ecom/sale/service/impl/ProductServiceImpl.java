@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
+
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProductMapper mapper;
@@ -31,19 +32,20 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public ProductDto createProduct(ProductRequest request) {
-        var product = new Product();
         var category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + request.getCategoryId()));
         validatePrice(request.getPrice());
         validateQuantity(request.getQuantity());
 
+        var product = new Product();
         product.setCategory(category);
         product.setName(request.getName());
         product.setPrice(request.getPrice());
         product.setQuantity(request.getQuantity());
-        productRepository.save(product);
 
+        productRepository.save(product);
         log.info("Created product : {}", product);
+
         return mapper.toDto(product);
 
     }
@@ -58,13 +60,17 @@ public class ProductServiceImpl implements ProductService {
         validatePrice(request.getPrice());
         validateQuantity(request.getQuantity());
 
-        updateUtils.updateIfChanged(product::getCategory, product::setCategory, category);
+        if (!product.getCategory().getId().equals(category.getId())) {
+            product.setCategory(category);
+        }
+
         updateUtils.updateIfChanged(product::getName, product::setName, request.getName());
         updateUtils.updateIfChanged(product::getPrice, product::setPrice, request.getPrice());
         updateUtils.updateIfChanged(product::getQuantity, product::setQuantity, request.getQuantity());
-        productRepository.save(product);
 
+        productRepository.save(product);
         log.info("Updated product : {}", product);
+
         return mapper.toDto(product);
     }
 
@@ -81,9 +87,9 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public ProductDto getProduct(Long id) {
-        var product = productRepository.findById(id)
-                        .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
-        return mapper.toDto(product);
+        return productRepository.findById(id)
+                .map(mapper::toDto)
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
     }
 
     @Override
@@ -103,13 +109,13 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private void validateQuantity(Integer quantity) {
-        if (quantity < 0) {
+        if (quantity == null || quantity < 0) {
             throw new RuntimeException("Quantity cannot be negative");
         }
     }
 
     private void validatePrice(BigDecimal price) {
-        if (price.compareTo(BigDecimal.ZERO) < 0) {
+        if (price == null || price.compareTo(BigDecimal.ZERO) < 0) {
             throw new RuntimeException("Price cannot be negative");
         }
     }
