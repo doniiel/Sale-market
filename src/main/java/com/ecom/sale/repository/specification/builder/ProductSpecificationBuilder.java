@@ -1,5 +1,6 @@
 package com.ecom.sale.repository.specification.builder;
 
+import com.ecom.sale.model.Category;
 import com.ecom.sale.model.Product;
 import com.ecom.sale.repository.specification.ProductSpecification;
 import org.springframework.data.jpa.domain.Specification;
@@ -24,6 +25,13 @@ public class ProductSpecificationBuilder {
     public ProductSpecificationBuilder withDescription(String description) {
         if (description != null && !description.isEmpty()) {
             spec = spec.and(ProductSpecification.hasDescription(description));
+        }
+        return this;
+    }
+
+    public ProductSpecificationBuilder withCategory(Category category) {
+        if (category != null) {
+            spec = spec.and(ProductSpecification.hasCategory(category));
         }
         return this;
     }

@@ -109,6 +109,7 @@ public class ProductServiceImpl implements ProductService {
         var spec = new ProductSpecificationBuilder()
                 .withName(criteria.getName())
                 .withDescription(criteria.getDescription())
+                .withCategory(criteria.getCategory())
                 .withPriceFrom(criteria.getPriceFrom())
                 .withPriceTo(criteria.getPriceTo())
                 .withQuantityFrom(criteria.getQuantityFrom())

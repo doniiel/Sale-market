@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: sale-market-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: sale_user
+      POSTGRES_PASSWORD: sale_password
+      POSTGRES_DB: sale_market
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sale-network
+
+volumes:
+  postgres_data:
+
+networks:
+  sale-network:
+    driver: bridge

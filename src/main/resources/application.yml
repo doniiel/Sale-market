@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: sale
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        show_sql: true
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sale_market
+    username: sale_user
+    password: sale_password
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 100
+      minimum-idle: 10
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 20000
+  liquibase:
+    change-log: classpath:/db/changelog/master.xml
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  health:
+    show-details: always

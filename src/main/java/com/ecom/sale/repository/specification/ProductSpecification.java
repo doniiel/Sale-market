@@ -1,5 +1,6 @@
 package com.ecom.sale.repository.specification;
 
+import com.ecom.sale.model.Category;
 import com.ecom.sale.model.Product;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -15,6 +16,11 @@ public class ProductSpecification {
     public static Specification<Product> hasDescription(String description) {
         return (root, query, cb) ->
                 cb.like(cb.lower(root.get("description")), "%" + description.toLowerCase() + "%");
+    }
+
+    public static Specification<Product> hasCategory(Category category) {
+        return (root, query, cb) ->
+                cb.equal(root.get("category"), category);
     }
 
     public static Specification<Product> hasPriceFrom(BigDecimal price) {

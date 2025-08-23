@@ -1,5 +1,6 @@
 package com.ecom.sale.dto;
 
+import com.ecom.sale.model.Category;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
@@ -19,6 +20,9 @@ public class ProductSearchCriteria {
 
     @Size(max = 255, message = "Description must not exceed 255 characters")
     private String description;
+
+    @Size(max = 100, message = "Category name must not exceed 100 characters")
+    private Category category;
 
     @DecimalMin(value = "0.0", inclusive = true, message = "PriceFrom must be positive or zero")
     private BigDecimal priceFrom;
