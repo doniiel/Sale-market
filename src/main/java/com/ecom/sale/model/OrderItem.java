@@ -1,5 +1,6 @@
 package com.ecom.sale.model;
 
+import com.ecom.sale.model.audit.AbstractAuditingEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,7 +11,7 @@ import java.math.BigDecimal;
 @Setter
 @Entity
 @Table(name = "order_item")
-public class OrderItem {
+public class OrderItem extends AbstractAuditingEntity {
 
     @Id
     @SequenceGenerator(

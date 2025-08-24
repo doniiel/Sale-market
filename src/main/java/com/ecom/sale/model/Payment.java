@@ -2,6 +2,7 @@ package com.ecom.sale.model;
 
 import com.ecom.sale.enums.PaymentMethod;
 import com.ecom.sale.enums.PaymentStatus;
+import com.ecom.sale.model.audit.AbstractAuditingEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,7 +15,7 @@ import java.math.BigDecimal;
 @Entity
 @ToString
 @Table(name = "payment")
-public class Payment {
+public class Payment extends AbstractAuditingEntity {
 
     @Id
     @SequenceGenerator(

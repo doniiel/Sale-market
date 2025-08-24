@@ -74,6 +74,12 @@
             </column>
             <column name="paid_at" type="TIMESTAMP"/>
             <column name="cancelled_at" type="TIMESTAMP"/>
+            <column name="created_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
         </createTable>
     </changeSet>
 
@@ -97,6 +103,12 @@
                 <constraints nullable="false"/>
             </column>
             <column name="total_price" type="NUMERIC(19,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_date" type="TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
         </createTable>
@@ -133,6 +145,12 @@
             </column>
             <column name="transaction_id" type="VARCHAR(255)">
                 <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="created_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
             </column>
         </createTable>
 

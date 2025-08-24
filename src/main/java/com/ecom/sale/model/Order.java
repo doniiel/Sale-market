@@ -1,6 +1,7 @@
 package com.ecom.sale.model;
 
 import com.ecom.sale.enums.OrderStatus;
+import com.ecom.sale.model.audit.AbstractAuditingEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,7 +14,7 @@ import java.util.List;
 @Setter
 @Entity
 @Table(name = "order")
-public class Order {
+public class Order extends AbstractAuditingEntity {
 
     @Id
     @SequenceGenerator(
