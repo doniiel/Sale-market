@@ -8,8 +8,8 @@ import com.ecom.sale.mapper.OrderMapper;
 import com.ecom.sale.model.Order;
 import com.ecom.sale.model.OrderItem;
 import com.ecom.sale.model.Product;
-import com.ecom.sale.repository.OrderItemRepository;
 import com.ecom.sale.repository.OrderRepository;
+import com.ecom.sale.repository.PaymentRepository;
 import com.ecom.sale.repository.ProductRepository;
 import com.ecom.sale.service.OrderService;
 import com.ecom.sale.util.SecurityUtils;
@@ -35,7 +35,7 @@ import static com.ecom.sale.enums.OrderStatus.NEW;
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
-    private final OrderItemRepository orderItemRepository;
+    private final PaymentRepository paymentRepository;
     private final ProductRepository productRepository;
     private final OrderMapper orderMapper;
     private final SecurityUtils securityUtils;
@@ -86,21 +86,25 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toDto(order);
     }
 
-
     @Override
     @Transactional
     public void deleteOrder(Long orderId) {
         var currentUser = securityUtils.getCurrentUser(API);
         var order = orderRepository.findById(orderId)
                 .orElseThrow(() -> exception(HttpStatus.NOT_FOUND, "Order not found with id=" + orderId));
+
         securityUtils.validateAccess(currentUser, order.getUser().getId(), API);
+
+        if (order.getPayment() != null) {
+            paymentRepository.delete(order.getPayment());
+            log.info("Deleted payment for order: orderId={}", orderId);
+        }
 
         if (order.getStatus() == NEW) {
             restoreProductQuantities(order.getOrderItems());
             log.info("Restored stock for deleted order id={}", orderId);
         }
 
-        orderItemRepository.deleteAll(order.getOrderItems());
         orderRepository.delete(order);
         log.info("Deleted order: id={}", orderId);
     }

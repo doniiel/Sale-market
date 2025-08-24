@@ -6,6 +6,7 @@ import com.ecom.sale.exception.CustomException;
 import com.ecom.sale.mapper.CategoryMapper;
 import com.ecom.sale.model.Category;
 import com.ecom.sale.repository.CategoryRepository;
+import com.ecom.sale.repository.ProductRepository;
 import com.ecom.sale.service.CategoryService;
 import com.ecom.sale.util.UpdateUtils;
 import com.ecom.sale.util.ValidatorUtils;
@@ -25,6 +26,7 @@ import java.time.LocalDateTime;
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
     private final CategoryMapper mapper;
     private final UpdateUtils updateUtils;
 
@@ -65,10 +67,14 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public void deleteCategory(Long id) {
-        if (!categoryRepository.existsById(id)) {
-            throw exception(HttpStatus.NOT_FOUND, "Category not found with id=" + id);
+        var category = categoryRepository.findById(id)
+                .orElseThrow(() -> exception(HttpStatus.NOT_FOUND, "Category not found with id=" + id));
+
+        if (!productRepository.findAllByCategory_Id(id).isEmpty()) {
+            throw exception(HttpStatus.BAD_REQUEST, "Cannot delete category with existing products");
         }
-        categoryRepository.deleteById(id);
+
+        categoryRepository.delete(category);
         log.info("Deleted category: id={}", id);
     }
 

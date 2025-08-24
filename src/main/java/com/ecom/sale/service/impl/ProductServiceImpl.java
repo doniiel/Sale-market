@@ -7,6 +7,7 @@ import com.ecom.sale.exception.CustomException;
 import com.ecom.sale.mapper.ProductMapper;
 import com.ecom.sale.model.Product;
 import com.ecom.sale.repository.CategoryRepository;
+import com.ecom.sale.repository.OrderItemRepository;
 import com.ecom.sale.repository.ProductRepository;
 import com.ecom.sale.repository.specification.builder.ProductSpecificationBuilder;
 import com.ecom.sale.service.ProductService;
@@ -30,6 +31,7 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final OrderItemRepository orderItemRepository;
     private final ProductMapper mapper;
     private final UpdateUtils updateUtils;
 
@@ -81,10 +83,14 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public void deleteProduct(Long id) {
-        if (!productRepository.existsById(id)) {
-            throw exception("Product not found with id=" + id);
+        var product = productRepository.findById(id)
+                .orElseThrow(() -> exception("Product not found with id=" + id));
+
+        if (!orderItemRepository.findByProduct_Id(id).isEmpty()) {
+            throw exception("Cannot delete product linked to existing orders");
         }
-        productRepository.deleteById(id);
+
+        productRepository.delete(product);
         log.info("Deleted product: id={}", id);
     }
 

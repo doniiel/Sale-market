@@ -81,6 +81,11 @@ public class UserServiceImpl implements UserService {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void deleteUser(Long id) {
         var user = getUserOrThrow(id);
+
+        if (!user.getOrders().isEmpty()) {
+            throw exception("Cannot delete user with existing orders", HttpStatus.BAD_REQUEST);
+        }
+
         userRepository.delete(user);
         log.info("Deleted user: id={}", id);
     }

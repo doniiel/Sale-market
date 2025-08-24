@@ -6,7 +6,6 @@ import com.ecom.sale.enums.PaymentMethod;
 import com.ecom.sale.exception.CustomException;
 import com.ecom.sale.mapper.PaymentMapper;
 import com.ecom.sale.model.Payment;
-import com.ecom.sale.model.User;
 import com.ecom.sale.repository.OrderRepository;
 import com.ecom.sale.repository.PaymentRepository;
 import com.ecom.sale.service.PaymentService;
@@ -73,11 +72,13 @@ public class PaymentServiceImpl implements PaymentService {
 
         var order = payment.getOrder();
         securityUtils.validateAccess(currentUser, order.getUser().getId(), API);
+
         order.setStatus(NEW);
         order.setPaidAt(null);
         orderRepository.save(order);
 
-        paymentRepository.deleteById(paymentId);
+        paymentRepository.delete(payment);
+
         log.info("Deleted payment: paymentId={}, reset orderId={}", paymentId, order.getId());
     }
 
