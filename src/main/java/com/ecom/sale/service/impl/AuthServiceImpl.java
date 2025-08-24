@@ -1,5 +1,6 @@
 package com.ecom.sale.service.impl;
 
+import com.ecom.sale.dto.AuthDto;
 import com.ecom.sale.dto.request.ChangePasswordRequest;
 import com.ecom.sale.dto.request.LoginRequest;
 import com.ecom.sale.dto.request.RefreshTokenRequest;
@@ -28,7 +29,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.Set;
 
 @Slf4j
@@ -51,7 +51,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public Map<String, String> login(LoginRequest request) {
+    public AuthDto login(LoginRequest request) {
         final var authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
         );
@@ -61,7 +61,10 @@ public class AuthServiceImpl implements AuthService {
         var refreshToken = createAndSaveRefreshToken(userDetails);
 
         log.info("User {} logged in successfully", userDetails.getUsername());
-        return Map.of("access_token", accessToken, "refresh_token", refreshToken);
+        return AuthDto.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
     }
 
     @Override
@@ -90,7 +93,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public Map<String, String> refreshToken(RefreshTokenRequest request) {
+    public AuthDto refreshToken(RefreshTokenRequest request) {
         var refreshToken = request.getRefreshToken();
         var storedToken = refreshTokenRepository.findByToken(refreshToken)
                 .orElseThrow(() -> exception(HttpStatus.UNAUTHORIZED, "Invalid refresh token"));
@@ -112,15 +115,19 @@ public class AuthServiceImpl implements AuthService {
             throwException(HttpStatus.UNAUTHORIZED, "Invalid refresh token");
         }
 
-        var newAccessToken = jwtUtils.generateAccessToken(userDetails);
-        var newRefreshToken = createAndSaveRefreshToken(userDetails);
-
         storedToken.setRevoked(true);
         refreshTokenRepository.save(storedToken);
 
+        var newAccessToken = jwtUtils.generateAccessToken(userDetails);
+        var newRefreshToken = createAndSaveRefreshToken(userDetails);
+
         log.info("Refreshed tokens for user {}", userDetails.getUsername());
-        return Map.of("access_token", newAccessToken, "refresh_token", newRefreshToken);
+        return AuthDto.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .build();
     }
+
 
     @Override
     @Transactional
@@ -154,21 +161,24 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private String createAndSaveRefreshToken(UserDetails userDetails) {
-        var refreshToken = jwtUtils.generateRefreshToken(userDetails);
         var user = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> exception(HttpStatus.NOT_FOUND, "User not found"));
 
         refreshTokenRepository.deleteByUserId(user.getId());
 
+        var refreshTokenValue = jwtUtils.generateRefreshToken(userDetails);
+
         var refreshTokenEntity = new RefreshToken();
-        refreshTokenEntity.setToken(refreshToken);
+        refreshTokenEntity.setToken(refreshTokenValue);
         refreshTokenEntity.setUser(user);
         refreshTokenEntity.setExpiryDate(now().plusSeconds(refreshTokenExpirationInMs / 1000));
         refreshTokenEntity.setRevoked(false);
 
         refreshTokenRepository.save(refreshTokenEntity);
-        return refreshToken;
+
+        return refreshTokenValue;
     }
+
 
     private void throwException(HttpStatus status, String message) {
         throw exception(status, message);

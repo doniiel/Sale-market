@@ -24,7 +24,7 @@
             <column name="id" valueNumeric="1"/>
             <column name="username" value="admin"/>
             <!-- пароль: 123456 -->
-            <column name="password" value="$2a$10$7dJhQyY9B9wB1QJ7Q9Wc1eZ3U4jBZwUmWeJcU4sg4H2pP8Ku.4L1a"/>
+            <column name="password" value="$2a$12$jlEV5z/yO0EPhhTs3pAI2e17NZ5d2/1.d/xCjHcdPwGQilFLyy1WC"/>
             <column name="email" value="admin@example.com"/>
             <column name="phone" value="+77000000000"/>
             <column name="bio" value="System administrator"/>
