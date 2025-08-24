@@ -8,5 +8,6 @@
 
     <include file="changes/001-inti-tables.xml" relativeToChangelogFile="true"/>
     <include file="changes/002-add-indexes.xml" relativeToChangelogFile="true"/>
+    <include file="changes/003-admin-user-test.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

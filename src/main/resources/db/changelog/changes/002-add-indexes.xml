@@ -29,4 +29,22 @@
         </createIndex>
     </changeSet>
 
+    <changeSet id="6-5" author="daniyal">
+        <createIndex tableName="user" indexName="idx_user_username">
+            <column name="username"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="6-6" author="daniyal">
+        <createIndex tableName="role" indexName="idx_role_name">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="6-7" author="daniyal">
+        <createIndex tableName="refresh_token" indexName="idx_refresh_token_token">
+            <column name="token"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>
