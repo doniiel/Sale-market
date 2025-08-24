@@ -5,13 +5,11 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.ToString;
 
 import java.math.BigDecimal;
 
 @Getter
-@Setter
 @ToString
 public class ProductSearchCriteria {
 

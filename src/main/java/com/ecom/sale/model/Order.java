@@ -47,4 +47,7 @@ public class Order extends AbstractAuditingEntity {
     @OneToOne(mappedBy = "order")
     private Payment payment;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 }

@@ -28,6 +28,8 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryMapper mapper;
     private final UpdateUtils updateUtils;
 
+    private static final String API = "/category";
+
     @Override
     @Transactional
     public CategoryDto createCategory(CategoryRequest request) {
@@ -38,7 +40,7 @@ public class CategoryServiceImpl implements CategoryService {
         category.setDescription(request.getDescription());
 
         categoryRepository.save(category);
-        log.info("Category created successfully: id={}, name='{}'", category.getId(), category.getName());
+        log.info("Created category: id={}, name='{}'", category.getId(), category.getName());
 
         return mapper.toDto(category);
     }
@@ -46,12 +48,8 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public CategoryDto updateCategory(Long id, CategoryRequest request) {
-        var category = categoryRepository.findById(id)
-                .orElseThrow(() -> new CustomException(
-                        "/category", HttpStatus.NOT_FOUND,
-                        "Category not found with id: " + id,
-                        LocalDateTime.now()
-                ));
+        final var category = categoryRepository.findById(id)
+                .orElseThrow(() -> exception(HttpStatus.NOT_FOUND, "Category not found with id=" + id));
 
         if (!category.getName().equals(request.getName())) {
             ValidatorUtils.ensureCategoryNameIsUnique(categoryRepository, request.getName());
@@ -60,9 +58,7 @@ public class CategoryServiceImpl implements CategoryService {
         updateUtils.updateIfChanged(category::getName, category::setName, request.getName());
         updateUtils.updateIfChanged(category::getDescription, category::setDescription, request.getDescription());
 
-        categoryRepository.save(category);
-        log.info("Category updated successfully: id={}, name='{}'", id, category.getName());
-
+        log.info("Updated category: id={}, name='{}'", id, category.getName());
         return mapper.toDto(category);
     }
 
@@ -70,25 +66,17 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public void deleteCategory(Long id) {
         if (!categoryRepository.existsById(id)) {
-            throw new CustomException(
-                    "/category", HttpStatus.NOT_FOUND,
-                    "Category not found with id=" + id,
-                    LocalDateTime.now()
-            );
+            throw exception(HttpStatus.NOT_FOUND, "Category not found with id=" + id);
         }
         categoryRepository.deleteById(id);
-        log.info("Category deleted successfully: id={}", id);
+        log.info("Deleted category: id={}", id);
     }
 
     @Override
     @Transactional(readOnly = true)
     public CategoryDto getCategory(Long id) {
         var category = categoryRepository.findById(id)
-                .orElseThrow(() -> new CustomException(
-                        "/category", HttpStatus.NOT_FOUND,
-                        "Category not found with id: " + id,
-                        LocalDateTime.now()
-                ));
+                .orElseThrow(() -> exception(HttpStatus.NOT_FOUND, "Category not found with id=" + id));
         log.info("Fetched category: id={}, name='{}'", category.getId(), category.getName());
         return mapper.toDto(category);
     }
@@ -97,11 +85,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional(readOnly = true)
     public CategoryDto getCategoryByName(String categoryName) {
         var category = categoryRepository.findByName(categoryName)
-                .orElseThrow(() -> new CustomException(
-                        "/category", HttpStatus.NOT_FOUND,
-                        "Category not found with name: " + categoryName,
-                        LocalDateTime.now()
-                ));
+                .orElseThrow(() -> exception(HttpStatus.NOT_FOUND, "Category not found with name=" + categoryName));
         log.info("Fetched category by name: id={}, name='{}'", category.getId(), category.getName());
         return mapper.toDto(category);
     }
@@ -109,10 +93,12 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional(readOnly = true)
     public Page<CategoryDto> getAllCategory(Pageable pageable) {
-        var categories = categoryRepository.findAll(pageable)
-                .map(mapper::toDto);
-        log.info("Fetched {} categories", categories.getTotalElements());
+        var categories = categoryRepository.findAll(pageable).map(mapper::toDto);
+        log.info("Fetched categories: total={}", categories.getTotalElements());
         return categories;
     }
-}
 
+    private CustomException exception(HttpStatus status, String message) {
+        return new CustomException(API, status, message, LocalDateTime.now());
+    }
+}

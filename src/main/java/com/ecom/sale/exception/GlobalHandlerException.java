@@ -2,7 +2,7 @@ package com.ecom.sale.exception;
 
 
 import com.ecom.sale.dto.ErrorDto;
-import com.ecom.sale.util.ErrorUtil;
+import com.ecom.sale.util.ErrorUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -32,13 +32,13 @@ public class GlobalHandlerException {
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ErrorUtil.buildError(apiEx));
+                .body(ErrorUtils.buildError(apiEx));
     }
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ErrorDto> handleApiException(CustomException ex) {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ErrorUtil.buildError(ex));
+                .body(ErrorUtils.buildError(ex));
     }
 
     @ExceptionHandler(Exception.class)
@@ -51,6 +51,6 @@ public class GlobalHandlerException {
         );
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ErrorUtil.buildError(apiEx));
+                .body(ErrorUtils.buildError(apiEx));
     }
 }

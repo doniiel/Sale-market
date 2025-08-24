@@ -33,16 +33,13 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper mapper;
     private final UpdateUtils updateUtils;
 
+    private static final String API = "/products";
+
     @Override
     @Transactional
     public ProductDto createProduct(ProductRequest request) {
-        var category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new CustomException("/category", NOT_FOUND,
-                        "Category not found with id: " + request.getCategoryId(), LocalDateTime.now())
-                );
-
-        ValidatorUtils.validatePrice(request.getPrice());
-        ValidatorUtils.validateQuantity(request.getQuantity());
+        var category = getCategoryOrThrow(request.getCategoryId());
+        validateProduct(request);
 
         var product = new Product();
         product.setCategory(category);
@@ -60,15 +57,9 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public ProductDto updateProduct(Long id, ProductRequest request) {
-        var product = productRepository.findById(id)
-                .orElseThrow(() -> new CustomException("/product", NOT_FOUND,
-                        "Product not found with id: " + id, LocalDateTime.now()));
-        var category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new CustomException("/category", NOT_FOUND,
-                        "Category not found with id: " + request.getCategoryId(), LocalDateTime.now()));
-
-        ValidatorUtils.validatePrice(request.getPrice());
-        ValidatorUtils.validateQuantity(request.getQuantity());
+        var product = getProductOrThrow(id);
+        var category = getCategoryOrThrow(request.getCategoryId());
+        validateProduct(request);
 
         if (!product.getCategory().getId().equals(category.getId())) {
             product.setCategory(category);
@@ -89,19 +80,16 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void deleteProduct(Long id) {
         if (!productRepository.existsById(id)) {
-            throw new CustomException("/product", NOT_FOUND,
-                    "Product not found with id: " + id, LocalDateTime.now());
+            throw exception("Product not found with id=" + id);
         }
         productRepository.deleteById(id);
-        log.info("Deleted product with id={}", id);
+        log.info("Deleted product: id={}", id);
     }
 
     @Override
     @Transactional(readOnly = true)
     public ProductDto getProduct(Long id) {
-        var product = productRepository.findById(id)
-                .orElseThrow(() -> new CustomException("/product", NOT_FOUND,
-                        "Product not found with id: " + id, LocalDateTime.now()));
+        var product = getProductOrThrow(id);
         log.info("Fetched product: id={}, name='{}'", product.getId(), product.getName());
         return mapper.toDto(product);
     }
@@ -119,10 +107,27 @@ public class ProductServiceImpl implements ProductService {
                 .withQuantityTo(criteria.getQuantityTo())
                 .build();
 
-        var products = productRepository.findAll(spec, pageable)
-                .map(mapper::toDto);
+        var products = productRepository.findAll(spec, pageable).map(mapper::toDto);
         log.info("Fetched {} products with search criteria", products.getTotalElements());
         return products;
     }
-}
 
+    private Product getProductOrThrow(Long id) {
+        return productRepository.findById(id)
+                .orElseThrow(() -> exception("Product not found with id=" + id));
+    }
+
+    private com.ecom.sale.model.Category getCategoryOrThrow(Long id) {
+        return categoryRepository.findById(id)
+                .orElseThrow(() -> exception("Category not found with id=" + id));
+    }
+
+    private void validateProduct(ProductRequest request) {
+        ValidatorUtils.validatePrice(request.getPrice());
+        ValidatorUtils.validateQuantity(request.getQuantity());
+    }
+
+    private CustomException exception(String message) {
+        return new CustomException(API, NOT_FOUND, message, LocalDateTime.now());
+    }
+}

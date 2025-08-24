@@ -3,9 +3,9 @@ package com.ecom.sale.util;
 import com.ecom.sale.dto.ErrorDto;
 import com.ecom.sale.exception.CustomException;
 
-public class ErrorUtil {
+public class ErrorUtils {
 
-    private ErrorUtil() {}
+    private ErrorUtils() {}
 
     public static ErrorDto buildError(CustomException ex) {
         return ErrorDto.builder()

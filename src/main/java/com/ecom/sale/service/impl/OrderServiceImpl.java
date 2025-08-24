@@ -10,7 +10,9 @@ import com.ecom.sale.model.Product;
 import com.ecom.sale.repository.OrderItemRepository;
 import com.ecom.sale.repository.OrderRepository;
 import com.ecom.sale.repository.ProductRepository;
+import com.ecom.sale.repository.UserRepository;
 import com.ecom.sale.service.OrderService;
+import com.ecom.sale.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -33,24 +35,31 @@ import static com.ecom.sale.enums.OrderStatus.NEW;
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
+    private final UserRepository userRepository;
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
     private final OrderMapper orderMapper;
+    private final SecurityUtils securityUtils;
+
+    private static final String API = "/orders";
 
     @Override
     @Transactional
     public OrderDto createOrder(OrderRequest request) {
+        var user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> exception(HttpStatus.NOT_FOUND, "User not found with id: " + request.getUserId()));
         validateRequest(request);
 
         var order = new Order();
         order.setStatus(NEW);
+        order.setUser(user);
 
         var items = buildOrderItems(order, request);
         order.setOrderItems(items);
         order.setTotalAmount(calculateTotalAmount(items));
 
         orderRepository.save(order);
-        log.info("Created new order: id={}, totalAmount={}", order.getId(), order.getTotalAmount());
+        log.info("Created order: id={}, totalAmount={}", order.getId(), order.getTotalAmount());
 
         return orderMapper.toDto(order);
     }
@@ -58,14 +67,12 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderDto updateOrder(Long id, OrderRequest request) {
+        var currentUser = securityUtils.getCurrentUser(API);
         validateRequest(request);
 
         var order = orderRepository.findById(id)
-                .orElseThrow(() -> new CustomException(
-                        "/orders", HttpStatus.NOT_FOUND,
-                        "Order not found with id: " + id,
-                        LocalDateTime.now()
-                ));
+                .orElseThrow(() -> exception(HttpStatus.NOT_FOUND, "Order not found with id=" + id));
+        securityUtils.hasPermission(currentUser, order.getUser(), API);
 
         restoreProductQuantities(order.getOrderItems());
         orderItemRepository.deleteAll(order.getOrderItems());
@@ -75,25 +82,21 @@ public class OrderServiceImpl implements OrderService {
         order.setTotalAmount(calculateTotalAmount(updatedItems));
         order.setStatus(NEW);
 
-        orderRepository.save(order);
         log.info("Updated order: id={}, totalAmount={}", order.getId(), order.getTotalAmount());
-
         return orderMapper.toDto(order);
     }
 
     @Override
     @Transactional
     public void deleteOrder(Long orderId) {
+        var currentUser = securityUtils.getCurrentUser(API);
         var order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new CustomException(
-                        "/orders", HttpStatus.NOT_FOUND,
-                        "Order not found with id: " + orderId,
-                        LocalDateTime.now()
-                ));
+                .orElseThrow(() -> exception(HttpStatus.NOT_FOUND, "Order not found with id=" + orderId));
+        securityUtils.validateAccess(currentUser, order.getUser().getId(), API);
 
         if (order.getStatus() == NEW) {
             restoreProductQuantities(order.getOrderItems());
-            log.info("Restored product quantities for deleted order id={}", orderId);
+            log.info("Restored stock for deleted order id={}", orderId);
         }
 
         orderItemRepository.deleteAll(order.getOrderItems());
@@ -105,11 +108,7 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(readOnly = true)
     public OrderDto getOrder(Long id) {
         var order = orderRepository.findById(id)
-                .orElseThrow(() -> new CustomException(
-                        "/orders", HttpStatus.NOT_FOUND,
-                        "Order not found with id: " + id,
-                        LocalDateTime.now()
-                ));
+                .orElseThrow(() -> exception(HttpStatus.NOT_FOUND, "Order not found with id=" + id));
         log.info("Fetched order: id={}, totalAmount={}", order.getId(), order.getTotalAmount());
         return orderMapper.toDto(order);
     }
@@ -117,21 +116,18 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public Page<OrderDto> getOrders(Pageable pageable) {
-        var orders = orderRepository.findAll(pageable)
-                .map(orderMapper::toDto);
-        log.info("Fetched {} orders", orders.getTotalElements());
+        var orders = orderRepository.findAll(pageable).map(orderMapper::toDto);
+        log.info("Fetched orders: total={}", orders.getTotalElements());
         return orders;
     }
 
     @Override
     @Transactional
     public void cancelOrder(Long orderId) {
+        var currentUser = securityUtils.getCurrentUser(API);
         var order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new CustomException(
-                        "/orders", HttpStatus.NOT_FOUND,
-                        "Order not found with id: " + orderId,
-                        LocalDateTime.now()
-                ));
+                .orElseThrow(() -> exception(HttpStatus.NOT_FOUND, "Order not found with id=" + orderId));
+        securityUtils.hasPermission(currentUser, order.getUser(), API);
 
         restoreProductQuantities(order.getOrderItems());
         order.setStatus(CANCELLED);
@@ -143,11 +139,7 @@ public class OrderServiceImpl implements OrderService {
 
     private void validateRequest(OrderRequest request) {
         if (request.getProductIds().size() != request.getQuantities().size()) {
-            throw new CustomException(
-                    "/orders", HttpStatus.BAD_REQUEST,
-                    "Product IDs and quantities must match in size",
-                    LocalDateTime.now()
-            );
+            throw exception(HttpStatus.BAD_REQUEST, "Product IDs and quantities must match in size");
         }
     }
 
@@ -155,17 +147,13 @@ public class OrderServiceImpl implements OrderService {
         var products = productRepository.findAllByIdIn(request.getProductIds());
 
         if (products.size() != request.getProductIds().size()) {
-            throw new CustomException(
-                    "/orders", HttpStatus.NOT_FOUND,
-                    "One or more products not found",
-                    LocalDateTime.now()
-            );
+            throw exception(HttpStatus.NOT_FOUND, "One or more products not found");
         }
 
         var items = new ArrayList<OrderItem>();
         for (int i = 0; i < products.size(); i++) {
             var product = products.get(i);
-            var quantity = request.getQuantities().get(i);
+            int quantity = request.getQuantities().get(i);
 
             validateQuantity(quantity);
             checkStock(product, quantity);
@@ -174,13 +162,12 @@ public class OrderServiceImpl implements OrderService {
             product.setQuantity(product.getQuantity() - quantity);
             productRepository.save(product);
 
-            log.info("Reserved product '{}' with quantity {} for order", product.getName(), quantity);
+            log.info("Reserved product '{}' x{} for order", product.getName(), quantity);
         }
-
         return items;
     }
 
-    private OrderItem buildOrderItem(Order order, Product product, Integer quantity) {
+    private OrderItem buildOrderItem(Order order, Product product, int quantity) {
         var item = new OrderItem();
         item.setOrder(order);
         item.setProduct(product);
@@ -207,22 +194,17 @@ public class OrderServiceImpl implements OrderService {
 
     private void validateQuantity(int quantity) {
         if (quantity <= 0) {
-            throw new CustomException(
-                    "/orders", HttpStatus.BAD_REQUEST,
-                    "Quantity must be positive",
-                    LocalDateTime.now()
-            );
+            throw exception(HttpStatus.BAD_REQUEST, "Quantity must be positive");
         }
     }
 
     private void checkStock(Product product, int orderQuantity) {
         if (product.getQuantity() < orderQuantity) {
-            throw new CustomException(
-                    "/orders", HttpStatus.BAD_REQUEST,
-                    "Not enough stock for product: " + product.getName(),
-                    LocalDateTime.now()
-            );
+            throw exception(HttpStatus.BAD_REQUEST, "Not enough stock for product: " + product.getName());
         }
     }
-}
 
+    private CustomException exception(HttpStatus status, String message) {
+        return new CustomException(API, status, message, LocalDateTime.now());
+    }
+}

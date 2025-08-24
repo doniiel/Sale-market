@@ -1,14 +1,13 @@
 package com.ecom.sale.dto.request;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.ToString;
 
 import java.math.BigDecimal;
 
 @Getter
-@Setter
 @ToString
 public class ProductRequest {
 
