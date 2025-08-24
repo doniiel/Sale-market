@@ -8,7 +8,7 @@
     <changeSet id="1" author="daniyal">
         <createSequence sequenceName="category_seq_gen" startValue="1"/>
 
-        <createTable tableName="category">
+        <createTable tableName="categories">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -28,7 +28,7 @@
     <changeSet id="2" author="daniyal">
         <createSequence sequenceName="role_seq_gen" startValue="1"/>
 
-        <createTable tableName="role">
+        <createTable tableName="roleы">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -47,7 +47,7 @@
     <changeSet id="3" author="daniyal">
         <createSequence sequenceName="user_seq_gen" startValue="1"/>
 
-        <createTable tableName="user">
+        <createTable tableName="userы">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -89,19 +89,19 @@
 
         <addForeignKeyConstraint
                 baseTableName="user_roles" baseColumnNames="user_id"
-                referencedTableName="user" referencedColumnNames="id"
+                referencedTableName="users" referencedColumnNames="id"
                 constraintName="fk_user_roles_user"/>
 
         <addForeignKeyConstraint
                 baseTableName="user_roles" baseColumnNames="role_id"
-                referencedTableName="role" referencedColumnNames="id"
+                referencedTableName="roles" referencedColumnNames="id"
                 constraintName="fk_user_roles_role"/>
     </changeSet>
 
     <changeSet id="5" author="daniyal">
         <createSequence sequenceName="product_seq_gen" startValue="1"/>
 
-        <createTable tableName="product">
+        <createTable tableName="products">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -127,15 +127,15 @@
         </createTable>
 
         <addForeignKeyConstraint
-                baseTableName="product" baseColumnNames="category_id"
-                referencedTableName="category" referencedColumnNames="id"
+                baseTableName="products" baseColumnNames="category_id"
+                referencedTableName="categories" referencedColumnNames="id"
                 constraintName="fk_product_category"/>
     </changeSet>
 
     <changeSet id="6" author="daniyal">
         <createSequence sequenceName="order_seq_gen" startValue="1"/>
 
-        <createTable tableName="order">
+        <createTable tableName="orders">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -159,15 +159,15 @@
         </createTable>
 
         <addForeignKeyConstraint
-                baseTableName="order" baseColumnNames="user_id"
-                referencedTableName="user" referencedColumnNames="id"
+                baseTableName="orders" baseColumnNames="user_id"
+                referencedTableName="users" referencedColumnNames="id"
                 constraintName="fk_order_user"/>
     </changeSet>
 
     <changeSet id="7" author="daniyal">
         <createSequence sequenceName="order_item_seq_gen" startValue="1"/>
 
-        <createTable tableName="order_item">
+        <createTable tableName="order_items">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -195,20 +195,20 @@
         </createTable>
 
         <addForeignKeyConstraint
-                baseTableName="order_item" baseColumnNames="order_id"
-                referencedTableName="order" referencedColumnNames="id"
+                baseTableName="order_items" baseColumnNames="order_id"
+                referencedTableName="orders" referencedColumnNames="id"
                 constraintName="fk_orderitem_order"/>
 
         <addForeignKeyConstraint
-                baseTableName="order_item" baseColumnNames="product_id"
-                referencedTableName="product" referencedColumnNames="id"
+                baseTableName="order_items" baseColumnNames="product_id"
+                referencedTableName="products" referencedColumnNames="id"
                 constraintName="fk_orderitem_product"/>
     </changeSet>
 
     <changeSet id="8" author="daniyal">
         <createSequence sequenceName="payment_seq_gen" startValue="1"/>
 
-        <createTable tableName="payment">
+        <createTable tableName="payments">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -236,15 +236,15 @@
         </createTable>
 
         <addForeignKeyConstraint
-                baseTableName="payment" baseColumnNames="order_id"
-                referencedTableName="order" referencedColumnNames="id"
+                baseTableName="payments" baseColumnNames="order_id"
+                referencedTableName="orders" referencedColumnNames="id"
                 constraintName="fk_payment_order"/>
     </changeSet>
 
     <changeSet id="9" author="daniyal">
         <createSequence sequenceName="token_seq_gen" startValue="1"/>
 
-        <createTable tableName="refresh_token">
+        <createTable tableName="refresh_tokens">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -269,8 +269,8 @@
         </createTable>
 
         <addForeignKeyConstraint
-                baseTableName="refresh_token" baseColumnNames="user_id"
-                referencedTableName="user" referencedColumnNames="id"
+                baseTableName="refresh_tokens" baseColumnNames="user_id"
+                referencedTableName="users" referencedColumnNames="id"
                 constraintName="fk_refresh_token_user"/>
     </changeSet>
 

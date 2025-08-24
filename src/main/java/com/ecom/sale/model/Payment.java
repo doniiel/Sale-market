@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 @Setter
 @Entity
 @ToString
-@Table(name = "payment")
+@Table(name = "payments")
 public class Payment extends AbstractAuditingEntity {
 
     @Id
