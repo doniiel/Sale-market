@@ -22,6 +22,14 @@ spring:
   liquibase:
     change-log: classpath:/db/changelog/master.xml
 
+jwt:
+  access:
+    secret: "zJH9DkLkP0Qm7aSxvT2UfGhR1XyN8cLm"
+    expiration: 900000
+  refresh:
+    secret: "nB2RtQyL8aSm0XpZoF5GhHjW9uVtCeKl"
+    expiration: 1209600000
+
 server:
   port: 8080
 
