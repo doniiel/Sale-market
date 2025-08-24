@@ -44,6 +44,7 @@ public class ProductServiceImpl implements ProductService {
         var product = new Product();
         product.setCategory(category);
         product.setName(request.getName());
+        product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
         product.setQuantity(request.getQuantity());
 
@@ -66,6 +67,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         updateUtils.updateIfChanged(product::getName, product::setName, request.getName());
+        updateUtils.updateIfChanged(product::getDescription, product::setDescription, request.getDescription());
         updateUtils.updateIfChanged(product::getPrice, product::setPrice, request.getPrice());
         updateUtils.updateIfChanged(product::getQuantity, product::setQuantity, request.getQuantity());
 
@@ -100,7 +102,7 @@ public class ProductServiceImpl implements ProductService {
         var spec = new ProductSpecificationBuilder()
                 .withName(criteria.getName())
                 .withDescription(criteria.getDescription())
-                .withCategory(criteria.getCategory())
+                .withCategory(criteria.getCategoryName())
                 .withPriceFrom(criteria.getPriceFrom())
                 .withPriceTo(criteria.getPriceTo())
                 .withQuantityFrom(criteria.getQuantityFrom())

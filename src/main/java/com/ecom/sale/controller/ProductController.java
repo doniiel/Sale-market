@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -57,9 +58,9 @@ public class ProductController {
     })
     @GetMapping
     public ResponseEntity<Page<ProductDto>> getAllProducts(
-            @Parameter(description = "Search criteria for filtering products")
+            @ParameterObject
             @ModelAttribute ProductSearchCriteria criteria,
-            @Parameter(description = "Pagination information")
+            @ParameterObject
             @PageableDefault Pageable pageable
     ) {
         return ResponseEntity.ok(productService.getAllProducts(criteria, pageable));

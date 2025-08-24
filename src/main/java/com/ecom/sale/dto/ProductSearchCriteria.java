@@ -20,7 +20,7 @@ public class ProductSearchCriteria {
     private String description;
 
     @Size(max = 100, message = "Category name must not exceed 100 characters")
-    private Category category;
+    private String categoryName;
 
     @DecimalMin(value = "0.0", message = "PriceFrom must be positive or zero")
     private BigDecimal priceFrom;

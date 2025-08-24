@@ -29,9 +29,9 @@ public class ProductSpecificationBuilder {
         return this;
     }
 
-    public ProductSpecificationBuilder withCategory(Category category) {
-        if (category != null) {
-            spec = spec.and(ProductSpecification.hasCategory(category));
+    public ProductSpecificationBuilder withCategory(String categoryName) {
+        if (categoryName != null && !categoryName.isEmpty()) {
+            spec = spec.and(ProductSpecification.hasCategory(categoryName));
         }
         return this;
     }
