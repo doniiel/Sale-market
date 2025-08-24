@@ -52,33 +52,45 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthDto login(LoginRequest request) {
-        final var authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-        );
+        log.info("User attempting to log in: {}", request.getUsername());
+        try {
+            final var authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+            );
 
-        var userDetails = (UserDetails) authentication.getPrincipal();
-        var accessToken = jwtUtils.generateAccessToken(userDetails);
-        var refreshToken = createAndSaveRefreshToken(userDetails);
+            var userDetails = (UserDetails) authentication.getPrincipal();
+            var accessToken = jwtUtils.generateAccessToken(userDetails);
+            var refreshToken = createAndSaveRefreshToken(userDetails);
 
-        log.info("User {} logged in successfully", userDetails.getUsername());
-        return AuthDto.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .build();
+            log.info("User {} logged in successfully", userDetails.getUsername());
+            return AuthDto.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .build();
+        } catch (BadCredentialsException e) {
+            log.error("Login failed for user {}: Invalid credentials", request.getUsername());
+            throw new CustomException(API, HttpStatus.UNAUTHORIZED, "Invalid username or password", LocalDateTime.now());
+        }
     }
 
     @Override
     @Transactional
     public void register(RegisterRequest request) {
+        log.info("Registering new user with username: {}", request.getUsername());
         if (userRepository.existsByUsername(request.getUsername())) {
+            log.error("Registration failed: Username {} already exists", request.getUsername());
             throwException(HttpStatus.BAD_REQUEST, "Username already taken");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
+            log.error("Registration failed: Email {} already exists", request.getEmail());
             throwException(HttpStatus.BAD_REQUEST, "Email already taken");
         }
 
         var userRole = roleRepository.findByName(Role.ROLE_USER.name())
-                .orElseThrow(() -> exception(HttpStatus.NOT_FOUND, "Default role not found"));
+                .orElseThrow(() -> {
+                    log.error("Default role not found");
+                    return exception(HttpStatus.NOT_FOUND, "Default role not found");
+                });
 
         var user = new User();
         user.setUsername(request.getUsername());
@@ -94,24 +106,32 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthDto refreshToken(RefreshTokenRequest request) {
-        var refreshToken = request.getRefreshToken();
-        var storedToken = refreshTokenRepository.findByToken(refreshToken)
-                .orElseThrow(() -> exception(HttpStatus.UNAUTHORIZED, "Invalid refresh token"));
+        log.info("Refreshing token for provided refresh token: {}", request.getRefreshToken());
+        var storedToken = refreshTokenRepository.findByToken(request.getRefreshToken())
+                .orElseThrow(() -> {
+                    log.error("Refresh token not found or invalid: {}", request.getRefreshToken());
+                    return exception(HttpStatus.UNAUTHORIZED, "Invalid refresh token");
+                });
 
         if (storedToken.isRevoked() || storedToken.getExpiryDate().isBefore(now())) {
+            log.error("Refresh token is revoked or expired: {}", storedToken.getToken());
             throwException(HttpStatus.UNAUTHORIZED, "Refresh token is revoked or expired");
         }
 
-        var userDetails = userRepository.findByUsername(jwtUtils.extractUsername(refreshToken, true))
+        var userDetails = userRepository.findByUsername(jwtUtils.extractUsername(request.getRefreshToken(), true))
                 .map(user -> new org.springframework.security.core.userdetails.User(
                         user.getUsername(),
                         user.getPassword(),
                         user.getRoles().stream()
                                 .map(role -> new org.springframework.security.core.authority.SimpleGrantedAuthority(role.getName()))
                                 .toList()))
-                .orElseThrow(() -> exception(HttpStatus.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> {
+                    log.error("User not found while refreshing token");
+                    return exception(HttpStatus.NOT_FOUND, "User not found");
+                });
 
-        if (!jwtUtils.isTokenValid(refreshToken, userDetails, true)) {
+        if (!jwtUtils.isTokenValid(request.getRefreshToken(), userDetails, true)) {
+            log.error("Provided refresh token is invalid for user {}", userDetails.getUsername());
             throwException(HttpStatus.UNAUTHORIZED, "Invalid refresh token");
         }
 
@@ -121,31 +141,32 @@ public class AuthServiceImpl implements AuthService {
         var newAccessToken = jwtUtils.generateAccessToken(userDetails);
         var newRefreshToken = createAndSaveRefreshToken(userDetails);
 
-        log.info("Refreshed tokens for user {}", userDetails.getUsername());
+        log.info("Tokens refreshed successfully for user {}", userDetails.getUsername());
         return AuthDto.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(newRefreshToken)
                 .build();
     }
 
-
     @Override
     @Transactional
     public void changePassword(ChangePasswordRequest request) {
         var currentUser = securityUtils.getCurrentUser(API);
+        log.info("User {} is attempting to change password", currentUser.getUsername());
 
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(currentUser.getUsername(), request.getCurrentPassword())
             );
         } catch (BadCredentialsException e) {
+            log.error("Password change failed: Incorrect current password for user {}", currentUser.getUsername());
             throwException(HttpStatus.UNAUTHORIZED, "Current password is incorrect");
         }
 
         currentUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(currentUser);
-
         refreshTokenRepository.deleteByUserId(currentUser.getId());
+
         log.info("Password changed successfully for user {}", currentUser.getUsername());
     }
 
@@ -153,7 +174,6 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void logout() {
         var currentUser = securityUtils.getCurrentUser(API);
-
         refreshTokenRepository.deleteByUserId(currentUser.getId());
         SecurityContextHolder.clearContext();
 
@@ -162,7 +182,10 @@ public class AuthServiceImpl implements AuthService {
 
     private String createAndSaveRefreshToken(UserDetails userDetails) {
         var user = userRepository.findByUsername(userDetails.getUsername())
-                .orElseThrow(() -> exception(HttpStatus.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> {
+                    log.error("User not found while creating refresh token: {}", userDetails.getUsername());
+                    return exception(HttpStatus.NOT_FOUND, "User not found");
+                });
 
         refreshTokenRepository.deleteByUserId(user.getId());
 
@@ -175,10 +198,10 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenEntity.setRevoked(false);
 
         refreshTokenRepository.save(refreshTokenEntity);
+        log.info("Refresh token created and saved for user {}", user.getUsername());
 
         return refreshTokenValue;
     }
-
 
     private void throwException(HttpStatus status, String message) {
         throw exception(status, message);
