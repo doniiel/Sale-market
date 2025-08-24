@@ -73,6 +73,7 @@ public class PaymentServiceImpl implements PaymentService {
         var order = payment.getOrder();
         securityUtils.validateAccess(currentUser, order.getUser().getId(), API);
 
+        order.setPayment(null);
         order.setStatus(NEW);
         order.setPaidAt(null);
         orderRepository.save(order);
