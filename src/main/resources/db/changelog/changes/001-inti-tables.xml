@@ -28,7 +28,7 @@
     <changeSet id="2" author="daniyal">
         <createSequence sequenceName="role_seq_gen" startValue="1"/>
 
-        <createTable tableName="roleы">
+        <createTable tableName="roles">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -47,7 +47,7 @@
     <changeSet id="3" author="daniyal">
         <createSequence sequenceName="user_seq_gen" startValue="1"/>
 
-        <createTable tableName="userы">
+        <createTable tableName="users">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
