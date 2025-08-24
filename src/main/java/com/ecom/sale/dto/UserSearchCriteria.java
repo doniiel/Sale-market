@@ -3,10 +3,12 @@ package com.ecom.sale.dto;
 import com.ecom.sale.enums.Role;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 
 
 @Getter
+@Setter
 @ToString
 @Schema(description = "Criteria for searching users")
 public class UserSearchCriteria {

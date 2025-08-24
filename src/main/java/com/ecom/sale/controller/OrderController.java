@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -103,6 +104,7 @@ public class OrderController {
     @ApiResponse(responseCode = "200", description = "Orders retrieved successfully")
     @GetMapping
     public ResponseEntity<Page<OrderDto>> getAllOrders(
+            @ParameterObject
             @PageableDefault Pageable pageable
     ) {
         return ResponseEntity.ok(orderService.getOrders(pageable));

@@ -13,10 +13,6 @@ import java.math.BigDecimal;
 @ToString
 public class PaymentRequest {
 
-    @Schema(description = "Unique identifier of the order", example = "101")
-    @NotNull(message = "Order ID is required")
-    private Long orderId;
-
     @Schema(description = "Payment amount (must be positive)", example = "150.75")
     @NotNull(message = "Amount is required")
     @DecimalMin(value = "0.01", message = "Amount must be greater than 0")

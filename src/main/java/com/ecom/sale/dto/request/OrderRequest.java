@@ -11,8 +11,6 @@ import java.util.List;
 @ToString
 public class OrderRequest {
 
-    private Long userId;
-
     @Schema(description = "List of product IDs included in the order", example = "[101, 102, 103]")
     @NotEmpty(message = "Product IDs list must not be empty")
     private List<Long> productIds;

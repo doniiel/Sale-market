@@ -2,6 +2,7 @@ package com.ecom.sale.service.impl;
 
 import com.ecom.sale.dto.OrderDto;
 import com.ecom.sale.dto.request.OrderRequest;
+import com.ecom.sale.enums.Role;
 import com.ecom.sale.exception.CustomException;
 import com.ecom.sale.mapper.OrderMapper;
 import com.ecom.sale.model.Order;
@@ -10,7 +11,6 @@ import com.ecom.sale.model.Product;
 import com.ecom.sale.repository.OrderItemRepository;
 import com.ecom.sale.repository.OrderRepository;
 import com.ecom.sale.repository.ProductRepository;
-import com.ecom.sale.repository.UserRepository;
 import com.ecom.sale.service.OrderService;
 import com.ecom.sale.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +35,6 @@ import static com.ecom.sale.enums.OrderStatus.NEW;
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
-    private final UserRepository userRepository;
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
     private final OrderMapper orderMapper;
@@ -46,13 +45,12 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderDto createOrder(OrderRequest request) {
-        var user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> exception(HttpStatus.NOT_FOUND, "User not found with id: " + request.getUserId()));
+        var currentUser = securityUtils.getCurrentUser(API);
         validateRequest(request);
 
         var order = new Order();
         order.setStatus(NEW);
-        order.setUser(user);
+        order.setUser(currentUser);
 
         var items = buildOrderItems(order, request);
         order.setOrderItems(items);
@@ -66,25 +64,28 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public OrderDto updateOrder(Long id, OrderRequest request) {
+    public OrderDto updateOrder(Long orderId, OrderRequest request) {
         var currentUser = securityUtils.getCurrentUser(API);
         validateRequest(request);
 
-        var order = orderRepository.findById(id)
-                .orElseThrow(() -> exception(HttpStatus.NOT_FOUND, "Order not found with id=" + id));
+        var order = orderRepository.findById(orderId)
+                .orElseThrow(() -> exception(HttpStatus.NOT_FOUND, "Order not found with id=" + orderId));
         securityUtils.hasPermission(currentUser, order.getUser(), API);
 
         restoreProductQuantities(order.getOrderItems());
-        orderItemRepository.deleteAll(order.getOrderItems());
+        order.getOrderItems().clear();
 
-        var updatedItems = buildOrderItems(order, request);
-        order.setOrderItems(updatedItems);
-        order.setTotalAmount(calculateTotalAmount(updatedItems));
+        var newItems = buildOrderItems(order, request);
+        order.getOrderItems().addAll(newItems);
+        order.setTotalAmount(calculateTotalAmount(newItems));
         order.setStatus(NEW);
 
+        orderRepository.save(order);
         log.info("Updated order: id={}, totalAmount={}", order.getId(), order.getTotalAmount());
+
         return orderMapper.toDto(order);
     }
+
 
     @Override
     @Transactional
@@ -116,10 +117,20 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public Page<OrderDto> getOrders(Pageable pageable) {
-        var orders = orderRepository.findAll(pageable).map(orderMapper::toDto);
+        var currentUser = securityUtils.getCurrentUser(API);
+
+        Page<Order> orders;
+
+        if (currentUser.getRoles().stream().anyMatch(r -> r.getName().equals(Role.ROLE_ADMIN.name()))) {
+            orders = orderRepository.findAll(pageable);
+        } else {
+            orders = orderRepository.findAllByUser_Id(currentUser.getId(), pageable);
+        }
+
         log.info("Fetched orders: total={}", orders.getTotalElements());
-        return orders;
+        return orders.map(orderMapper::toDto);
     }
+
 
     @Override
     @Transactional
