@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 
 public class ProductSpecificationBuilder {
 
-    private Specification<Product> spec = null; // стартуем с null
+    private Specification<Product> spec = null;
     private BigDecimal priceFrom;
     private BigDecimal priceTo;
     private Integer quantityFrom;
